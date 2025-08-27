@@ -60,7 +60,11 @@ class Review:
     def instance_from_db(cls, row):
         review_id = row[0]
         if review_id in cls.all:
-            return cls.all[review_id]
+            review = cls.all[review_id]
+            review.year = row[1]
+            review.summary = row[2]
+            review.employee_id = row[3]
+            return review
         review = cls(row[1], row[2], row[3], review_id)
         cls.all[review_id] = review
         return review
