@@ -1,10 +1,8 @@
 from __init__ import CURSOR, CONN
-from department import Department
 from employee import Employee
 
 class Review:
 
-    # Dictionary of objects saved to the database.
     all = {}
 
     def __init__(self, year, summary, employee_id, id=None):
@@ -21,7 +19,6 @@ class Review:
 
     @classmethod
     def create_table(cls):
-        """Create a new table to persist the attributes of Review instances"""
         sql = """
             CREATE TABLE IF NOT EXISTS reviews (
                 id INTEGER PRIMARY KEY,
@@ -36,13 +33,11 @@ class Review:
 
     @classmethod
     def drop_table(cls):
-        """Drop the table that persists Review instances"""
         sql = "DROP TABLE IF EXISTS reviews;"
         CURSOR.execute(sql)
         CONN.commit()
 
     def save(self):
-        """Insert or update the Review in the database"""
         if self.id is None:
             sql = """
                 INSERT INTO reviews (year, summary, employee_id)
@@ -57,14 +52,12 @@ class Review:
 
     @classmethod
     def create(cls, year, summary, employee_id):
-        """Initialize and save a new Review instance"""
         review = cls(year, summary, employee_id)
         review.save()
         return review
 
     @classmethod
     def instance_from_db(cls, row):
-        """Return a Review instance from a database row"""
         review_id = row[0]
         if review_id in cls.all:
             return cls.all[review_id]
@@ -74,14 +67,12 @@ class Review:
 
     @classmethod
     def find_by_id(cls, id):
-        """Find a Review by its ID"""
         sql = "SELECT * FROM reviews WHERE id = ?"
         CURSOR.execute(sql, (id,))
         row = CURSOR.fetchone()
         return cls.instance_from_db(row) if row else None
 
     def update(self):
-        """Update the Review in the database"""
         sql = """
             UPDATE reviews
             SET year = ?, summary = ?, employee_id = ?
@@ -91,7 +82,6 @@ class Review:
         CONN.commit()
 
     def delete(self):
-        """Delete the Review from the database and memory"""
         sql = "DELETE FROM reviews WHERE id = ?"
         CURSOR.execute(sql, (self.id,))
         CONN.commit()
@@ -101,8 +91,43 @@ class Review:
 
     @classmethod
     def get_all(cls):
-        """Return all Review instances from the database"""
         sql = "SELECT * FROM reviews"
         CURSOR.execute(sql)
         rows = CURSOR.fetchall()
         return [cls.instance_from_db(row) for row in rows]
+
+    # Property methods
+    @property
+    def year(self):
+        return self._year
+
+    @year.setter
+    def year(self, value):
+        if isinstance(value, int) and value >= 2000:
+            self._year = value
+        else:
+            raise ValueError("Year must be an integer >= 2000.")
+
+    @property
+    def summary(self):
+        return self._summary
+
+    @summary.setter
+    def summary(self, value):
+        if isinstance(value, str) and value.strip():
+            self._summary = value
+        else:
+            raise ValueError("Summary must be a non-empty string.")
+
+    @property
+    def employee_id(self):
+        return self._employee_id
+
+    @employee_id.setter
+    def employee_id(self, value):
+        sql = "SELECT * FROM employees WHERE id = ?"
+        CURSOR.execute(sql, (value,))
+        if CURSOR.fetchone():
+            self._employee_id = value
+        else:
+            raise ValueError("employee_id must reference a valid Employee.")
